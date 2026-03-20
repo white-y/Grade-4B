@@ -17,6 +17,11 @@ function getReviewIntervalMs(stats) {
   return base
 }
 
+function withBase(path) {
+  const normalized = path.replace(/^\/+/, '')
+  return `${import.meta.env.BASE_URL}${normalized}`
+}
+
 function App() {
   const cacheKey = 'pronunciation-cache-v1'
   const reviewStatsKey = 'review-stats-v1'
@@ -53,7 +58,7 @@ function App() {
   const dayData = learningData[current]
   const cards = useMemo(() => uniqCards(dayData.cards), [dayData])
   const asset = dayAssets[dayData.day]
-  const currentImagePath = asset ? `/${asset.folder}/${asset.image}` : ''
+  const currentImagePath = asset ? withBase(`${asset.folder}/${asset.image}`) : ''
   const q = quizQueue[quizIndex]
 
   const progress = useMemo(() => {
@@ -414,7 +419,7 @@ function App() {
       return
     }
     if (logicLoadedDay === dayData.day) return
-    const path = `/${asset.folder}/记忆逻辑.md`
+    const path = withBase(`${asset.folder}/记忆逻辑.md`)
     setLogicMarkdown('加载中...')
     try {
       const res = await fetch(path)
