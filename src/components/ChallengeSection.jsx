@@ -11,7 +11,7 @@ function ChallengeSection({
   fillValue,
   setFillValue,
   onSubmitFill,
-  buildChoices,
+  choices,
   optionResult,
   onSelectOption,
   quizTip,
@@ -80,7 +80,7 @@ function ChallengeSection({
                     <button className="mb-2 rounded-xl bg-gradient-to-br from-[#40d8c5] to-[#66e2d1] px-3 py-2.5 text-sm font-extrabold text-[#07343a]" onClick={() => onSpeakWord(q.en)}>🔊 点击播放发音</button>
                   ) : null}
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    {buildChoices(q, q?.type === 'en2zh' ? 'zh' : 'en').map((opt) => {
+                    {choices.map((opt) => {
                       const locked = Boolean(optionResult)
                       const isCorrect = optionResult?.correctValue === opt
                       const isWrong = optionResult?.chosen === opt && optionResult?.chosen !== optionResult?.correctValue
@@ -160,7 +160,7 @@ ChallengeSection.propTypes = {
   fillValue: PropTypes.string.isRequired,
   setFillValue: PropTypes.func.isRequired,
   onSubmitFill: PropTypes.func.isRequired,
-  buildChoices: PropTypes.func.isRequired,
+  choices: PropTypes.arrayOf(PropTypes.string).isRequired,
   optionResult: PropTypes.shape({
     chosen: PropTypes.string,
     correctValue: PropTypes.string

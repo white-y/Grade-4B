@@ -47,6 +47,7 @@ function App() {
   const [matchTip, setMatchTip] = useState('请选择左边一个中文，再选右边一个英文。')
   const [pronunciationStatus, setPronunciationStatus] = useState('idle')
   const [speakingWord, setSpeakingWord] = useState('')
+  const [speakingSource, setSpeakingSource] = useState('none')
   const [reviewStats, setReviewStats] = useState({})
   const fullImageRef = useRef(null)
   const pronunciationCacheRef = useRef(new Map())
@@ -60,6 +61,16 @@ function App() {
   const asset = dayAssets[dayData.day]
   const currentImagePath = asset ? withBase(`${asset.folder}/${asset.image}`) : ''
   const q = quizQueue[quizIndex]
+  const currentChoiceField = q?.type === 'en2zh' ? 'zh' : 'en'
+  const currentQuizChoices = useMemo(() => {
+    if (!q || q.type === 'fill') return []
+    const pool = cards.filter(([en]) => en !== q.en)
+    const others = shuffle(pool).slice(0, 3)
+    const values = currentChoiceField === 'en' ? [q.en, ...others.map((item) => item[0])] : [q.zh, ...others.map((item) => item[1])]
+    return shuffle(values)
+  }, [cards, currentChoiceField, q])
+  const cardsSpeakingWord = speakingSource === 'cards' || speakingSource === 'all' ? speakingWord : ''
+  const cardsPronunciationStatus = speakingSource === 'cards' || speakingSource === 'all' ? pronunciationStatus : 'idle'
 
   const progress = useMemo(() => {
     const total = quizQueue.length + (cards.length > 0 ? 1 : 0)
@@ -361,10 +372,11 @@ function App() {
     return null
   }
 
-  async function speakWord(word) {
+  async function speakWord(word, source = 'cards') {
     readingSessionRef.current += 1
     const sessionId = readingSessionRef.current
     stopCurrentPlayback()
+    setSpeakingSource(source)
     setSpeakingWord(word)
     setPronunciationStatus('loading')
     const sourceUrl = await getPronunciationAudio(word)
@@ -376,6 +388,7 @@ function App() {
         if (sessionId === readingSessionRef.current) {
           setPronunciationStatus('idle')
           setSpeakingWord('')
+          setSpeakingSource('none')
         }
         return
       } catch {
@@ -385,6 +398,7 @@ function App() {
           if (sessionId === readingSessionRef.current) {
             setPronunciationStatus('idle')
             setSpeakingWord('')
+            setSpeakingSource('none')
           }
           return
         } catch {
@@ -401,6 +415,7 @@ function App() {
       if (sessionId === readingSessionRef.current) {
         setPronunciationStatus('idle')
         setSpeakingWord('')
+        setSpeakingSource('none')
       }
     }
   }
@@ -410,6 +425,7 @@ function App() {
     readingSessionRef.current += 1
     const sessionId = readingSessionRef.current
     stopCurrentPlayback()
+    setSpeakingSource('all')
     setPronunciationStatus('loading')
     for (const [word] of cards) {
       if (sessionId !== readingSessionRef.current) break
@@ -444,6 +460,7 @@ function App() {
     if (sessionId === readingSessionRef.current) {
       setPronunciationStatus('idle')
       setSpeakingWord('')
+      setSpeakingSource('none')
     }
   }
 
@@ -474,13 +491,6 @@ function App() {
     if (nextOpen) {
       loadLogic()
     }
-  }
-
-  function buildChoices(target, field) {
-    const pool = cards.filter(([en]) => en !== target.en)
-    const others = shuffle(pool).slice(0, 3)
-    const values = field === 'en' ? [target.en, ...others.map((item) => item[0])] : [target.zh, ...others.map((item) => item[1])]
-    return shuffle(values)
   }
 
   function moveNextQuiz(delay = 700) {
@@ -658,9 +668,9 @@ function App() {
             day={dayData.day}
             cards={cards}
             ipaMap={ipaMap}
-            onSpeakWord={speakWord}
-            speakingWord={speakingWord}
-            pronunciationStatus={pronunciationStatus}
+            onSpeakWord={(word) => speakWord(word, 'cards')}
+            speakingWord={cardsSpeakingWord}
+            pronunciationStatus={cardsPronunciationStatus}
           />
 
           <ChallengeSection
@@ -674,12 +684,12 @@ function App() {
             fillValue={fillValue}
             setFillValue={setFillValue}
             onSubmitFill={onSubmitFill}
-            buildChoices={buildChoices}
+            choices={currentQuizChoices}
             optionResult={optionResult}
             onSelectOption={onSelectOption}
             quizTip={quizTip}
             onRestartQuiz={restartQuiz}
-            onSpeakWord={speakWord}
+            onSpeakWord={(word) => speakWord(word, 'quiz')}
             leftItems={leftItems}
             rightItems={rightItems}
             doneIds={doneIds}
