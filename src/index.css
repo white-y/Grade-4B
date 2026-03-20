@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+  background:
+    radial-gradient(circle at 12% 12%, #e5f2ff 0 12%, transparent 13%),
+    radial-gradient(circle at 88% 18%, #ffe5f1 0 10%, transparent 11%),
+    radial-gradient(circle at 87% 86%, #fff3c2 0 11%, transparent 12%),
+    linear-gradient(140deg, #f7fbff, #fff8f2);
+  color: #22314d;
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.float-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.35;
+  background:
+    radial-gradient(8px 8px at 10% 20%, #fff 0 80%, transparent 81%),
+    radial-gradient(10px 10px at 80% 14%, #fff 0 80%, transparent 81%),
+    radial-gradient(9px 9px at 74% 42%, #fff 0 80%, transparent 81%);
+  animation: cloud 18s linear infinite;
+}
+
+@keyframes cloud {
+  from { transform: translateX(0); }
+  to { transform: translateX(-40px); }
+}
