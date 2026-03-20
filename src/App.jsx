@@ -270,19 +270,54 @@ function App() {
     })
   }
 
+  function waitForVoices(timeoutMs = 1200) {
+    return new Promise((resolve) => {
+      if (!('speechSynthesis' in window)) {
+        resolve([])
+        return
+      }
+      const existing = speechSynthesis.getVoices()
+      if (existing.length) {
+        resolve(existing)
+        return
+      }
+      let done = false
+      const finish = () => {
+        if (done) return
+        done = true
+        speechSynthesis.removeEventListener('voiceschanged', onVoicesChanged)
+        resolve(speechSynthesis.getVoices())
+      }
+      const onVoicesChanged = () => finish()
+      speechSynthesis.addEventListener('voiceschanged', onVoicesChanged)
+      setTimeout(finish, timeoutMs)
+    })
+  }
+
   function playSpeechSynthesis(word, rate = 0.9) {
     return new Promise((resolve, reject) => {
       if (!('speechSynthesis' in window)) {
         reject(new Error('speech synthesis unsupported'))
         return
       }
-      const utter = new SpeechSynthesisUtterance(word)
-      utter.lang = 'en-US'
-      utter.rate = rate
-      utter.onend = () => resolve(true)
-      utter.onerror = () => reject(new Error('speech synthesis failed'))
-      speechSynthesis.cancel()
-      speechSynthesis.speak(utter)
+      waitForVoices()
+        .then((voices) => {
+          const englishVoice = voices.find((voice) => /^en[-_]/i.test(voice.lang))
+          const utter = new SpeechSynthesisUtterance(word)
+          if (englishVoice) {
+            utter.voice = englishVoice
+            utter.lang = englishVoice.lang
+          } else {
+            utter.lang = 'en-US'
+          }
+          utter.rate = rate
+          utter.volume = 1
+          utter.onend = () => resolve(true)
+          utter.onerror = () => reject(new Error('speech synthesis failed'))
+          speechSynthesis.cancel()
+          speechSynthesis.speak(utter)
+        })
+        .catch(() => reject(new Error('speech synthesis failed')))
     })
   }
 
@@ -313,7 +348,7 @@ function App() {
           setPronunciationCache(key, null, cacheMissTtlMs)
           return null
         }
-        const normalized = source.startsWith('//') ? `https:${source}` : source
+        const normalized = source.startsWith('//') ? `https:${source}` : source.replace(/^http:\/\//i, 'https://')
         setPronunciationCache(key, normalized, cacheTtlMs)
         return normalized
       } catch {
